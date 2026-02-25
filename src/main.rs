@@ -143,16 +143,16 @@ fn unzip_path(input: &Path) -> io::Result<()> {
 }
 
 fn print_usage() {
-    eprintln!("TurboZip - High-performance zip utility for Windows");
+    eprintln!("Rusted ZIP - High-performance zip utility for Windows");
     eprintln!();
     eprintln!("Usage:");
-    eprintln!("  turbozip zip   <file_or_folder>");
-    eprintln!("  turbozip unzip <file.zip>");
+    eprintln!("  rustedzip zip   <file_or_folder>");
+    eprintln!("  rustedzip unzip <file.zip>");
     eprintln!();
     eprintln!("Examples:");
-    eprintln!("  turbozip zip   my_project\\");
-    eprintln!("  turbozip zip   report.docx");
-    eprintln!("  turbozip unzip archive.zip");
+    eprintln!("  rustedzip zip   my_project\\");
+    eprintln!("  rustedzip zip   report.docx");
+    eprintln!("  rustedzip unzip archive.zip");
 }
 
 fn main() {

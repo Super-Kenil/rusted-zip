@@ -1,12 +1,12 @@
 [package]
-name = "turbozip"
+name = "rustedzip"
 version = "1.0.0"
 edition = "2021"
-description = "High-performance zip/unzip CLI for Windows"
-authors = ["TurboZip"]
+description = "High-performance zip/unzip CLI for Windows, built with Rust"
+authors = ["Super-Kenil"]
 
 [[bin]]
-name = "turbozip"
+name = "rustedzip"
 path = "src/main.rs"
 
 [dependencies]

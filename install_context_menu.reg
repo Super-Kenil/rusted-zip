@@ -1,73 +1,57 @@
 Windows Registry Editor Version 5.00
 
 ; ============================================================
-;  TurboZip Context Menu Integration
-;  Edit TURBOZIP_PATH below to match where you placed the .exe
+;  Rusted ZIP Context Menu Integration
+;  Edit RUSTEDZIP_PATH below to match where you placed the .exe
 ; ============================================================
 
-; --- Right-click on FILES ---
+; --- Right-click on FILES: Compress ---
 
-[HKEY_CLASSES_ROOT\*\shell\TurboZip]
-@="TurboZip"
-"SubCommands"=""
-"MUIVerb"="TurboZip"
-"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\*\shell\RustedZip_Compress]
+@="Rusted ZIP: Compress"
+"Icon"="C:\\Tools\\rustedzip\\rustedzip.exe,0"
 
-[HKEY_CLASSES_ROOT\*\shell\TurboZip\Shell\Compress]
-@="TurboZip: Compress"
-"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\*\shell\RustedZip_Compress\command]
+@="\"C:\\Tools\\rustedzip\\rustedzip.exe\" zip \"%1\""
 
-[HKEY_CLASSES_ROOT\*\shell\TurboZip\Shell\Compress\command]
-@="\"C:\\Tools\\turbozip\\turbozip.exe\" zip \"%1\""
+; --- Right-click on FILES: Extract Here ---
 
-[HKEY_CLASSES_ROOT\*\shell\TurboZip\Shell\Extract]
-@="TurboZip: Extract Here"
-"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\*\shell\RustedZip_Extract]
+@="Rusted ZIP: Extract Here"
+"Icon"="C:\\Tools\\rustedzip\\rustedzip.exe,0"
 
-[HKEY_CLASSES_ROOT\*\shell\TurboZip\Shell\Extract\command]
-@="\"C:\\Tools\\turbozip\\turbozip.exe\" unzip \"%1\""
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\*\shell\RustedZip_Extract\command]
+@="\"C:\\Tools\\rustedzip\\rustedzip.exe\" unzip \"%1\""
 
-; --- Right-click on .zip files specifically ---
+; --- Right-click on FOLDERS: Compress Folder ---
 
-[HKEY_CLASSES_ROOT\.zip\OpenWithProgids]
-"TurboZip.zip"=""
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Directory\shell\RustedZip_Compress]
+@="Rusted ZIP: Compress Folder"
+"Icon"="C:\\Tools\\rustedzip\\rustedzip.exe,0"
 
-[HKEY_CLASSES_ROOT\TurboZip.zip]
-@="TurboZip Archive"
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Directory\shell\RustedZip_Compress\command]
+@="\"C:\\Tools\\rustedzip\\rustedzip.exe\" zip \"%1\""
 
-[HKEY_CLASSES_ROOT\TurboZip.zip\shell\Extract]
-@="TurboZip: Extract Here"
-"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+; --- Right-click on folder BACKGROUND: Compress Current Folder ---
 
-[HKEY_CLASSES_ROOT\TurboZip.zip\shell\Extract\command]
-@="\"C:\\Tools\\turbozip\\turbozip.exe\" unzip \"%1\""
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Directory\Background\shell\RustedZip_CompressBg]
+@="Rusted ZIP: Compress Current Folder"
+"Icon"="C:\\Tools\\rustedzip\\rustedzip.exe,0"
 
-; --- Right-click on FOLDERS (background) ---
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Directory\Background\shell\RustedZip_CompressBg\command]
+@="\"C:\\Tools\\rustedzip\\rustedzip.exe\" zip \"%V\""
 
-[HKEY_CLASSES_ROOT\Directory\shell\TurboZip]
-@="TurboZip"
-"MUIVerb"="TurboZip"
-"SubCommands"=""
-"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+; --- .zip file-type association ---
 
-[HKEY_CLASSES_ROOT\Directory\shell\TurboZip\Shell\Compress]
-@="TurboZip: Compress Folder"
-"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\.zip\OpenWithProgids]
+"RustedZip.zip"=""
 
-[HKEY_CLASSES_ROOT\Directory\shell\TurboZip\Shell\Compress\command]
-@="\"C:\\Tools\\turbozip\\turbozip.exe\" zip \"%1\""
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\RustedZip.zip]
+@="Rusted ZIP Archive"
 
-; --- Right-click on folder BACKGROUND ---
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\RustedZip.zip\shell\extract]
+@="Rusted ZIP: Extract Here"
+"Icon"="C:\\Tools\\rustedzip\\rustedzip.exe,0"
 
-[HKEY_CLASSES_ROOT\Directory\Background\shell\TurboZip]
-@="TurboZip"
-"MUIVerb"="TurboZip"
-"SubCommands"=""
-"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
-
-[HKEY_CLASSES_ROOT\Directory\Background\shell\TurboZip\Shell\Compress]
-@="TurboZip: Compress Current Folder"
-"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
-
-[HKEY_CLASSES_ROOT\Directory\Background\shell\TurboZip\Shell\Compress\command]
-@="\"C:\\Tools\\turbozip\\turbozip.exe\" zip \"%V\""
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\RustedZip.zip\shell\extract\command]
+@="\"C:\\Tools\\rustedzip\\rustedzip.exe\" unzip \"%1\""
