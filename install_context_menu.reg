@@ -1,0 +1,73 @@
+Windows Registry Editor Version 5.00
+
+; ============================================================
+;  TurboZip Context Menu Integration
+;  Edit TURBOZIP_PATH below to match where you placed the .exe
+; ============================================================
+
+; --- Right-click on FILES ---
+
+[HKEY_CLASSES_ROOT\*\shell\TurboZip]
+@="TurboZip"
+"SubCommands"=""
+"MUIVerb"="TurboZip"
+"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+
+[HKEY_CLASSES_ROOT\*\shell\TurboZip\Shell\Compress]
+@="TurboZip: Compress"
+"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+
+[HKEY_CLASSES_ROOT\*\shell\TurboZip\Shell\Compress\command]
+@="\"C:\\Tools\\turbozip\\turbozip.exe\" zip \"%1\""
+
+[HKEY_CLASSES_ROOT\*\shell\TurboZip\Shell\Extract]
+@="TurboZip: Extract Here"
+"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+
+[HKEY_CLASSES_ROOT\*\shell\TurboZip\Shell\Extract\command]
+@="\"C:\\Tools\\turbozip\\turbozip.exe\" unzip \"%1\""
+
+; --- Right-click on .zip files specifically ---
+
+[HKEY_CLASSES_ROOT\.zip\OpenWithProgids]
+"TurboZip.zip"=""
+
+[HKEY_CLASSES_ROOT\TurboZip.zip]
+@="TurboZip Archive"
+
+[HKEY_CLASSES_ROOT\TurboZip.zip\shell\Extract]
+@="TurboZip: Extract Here"
+"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+
+[HKEY_CLASSES_ROOT\TurboZip.zip\shell\Extract\command]
+@="\"C:\\Tools\\turbozip\\turbozip.exe\" unzip \"%1\""
+
+; --- Right-click on FOLDERS (background) ---
+
+[HKEY_CLASSES_ROOT\Directory\shell\TurboZip]
+@="TurboZip"
+"MUIVerb"="TurboZip"
+"SubCommands"=""
+"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+
+[HKEY_CLASSES_ROOT\Directory\shell\TurboZip\Shell\Compress]
+@="TurboZip: Compress Folder"
+"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+
+[HKEY_CLASSES_ROOT\Directory\shell\TurboZip\Shell\Compress\command]
+@="\"C:\\Tools\\turbozip\\turbozip.exe\" zip \"%1\""
+
+; --- Right-click on folder BACKGROUND ---
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\TurboZip]
+@="TurboZip"
+"MUIVerb"="TurboZip"
+"SubCommands"=""
+"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\TurboZip\Shell\Compress]
+@="TurboZip: Compress Current Folder"
+"Icon"="C:\\Tools\\turbozip\\turbozip.exe,0"
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\TurboZip\Shell\Compress\command]
+@="\"C:\\Tools\\turbozip\\turbozip.exe\" zip \"%V\""
