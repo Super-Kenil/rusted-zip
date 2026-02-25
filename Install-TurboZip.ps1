@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    Installs TurboZip Windows Explorer context menu entries.
+    Installs TurboZip Windows Explorer context menu entries (flat, no cascading).
 
 .PARAMETER ExePath
     Full path to turbozip.exe. Defaults to C:\Tools\turbozip\turbozip.exe
@@ -22,53 +22,36 @@ param(
 $ErrorActionPreference = "Stop"
 
 # ---------------------------------------------------------------------------
-# Use .NET Registry API directly so the literal '*' key name is never
-# misinterpreted as a PowerShell wildcard glob by the registry provider.
+# All registry work via .NET Microsoft.Win32.Registry — avoids PowerShell
+# registry provider wildcard issues with the literal '*' key name.
 # ---------------------------------------------------------------------------
 
-function Open-HKLMKey([string]$subPath, [bool]$writable = $true) {
-    return [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($subPath, $writable)
+function CreateKey([string]$subPath) {
+    $k = [Microsoft.Win32.Registry]::LocalMachine.CreateSubKey($subPath, $true)
+    return $k
 }
 
-function New-RegKey([string]$subPath) {
-    # CreateSubKey is idempotent: opens existing or creates new
-    $key = [Microsoft.Win32.Registry]::LocalMachine.CreateSubKey($subPath, $true)
-    $key.Close()
-}
-
-function Set-RegValue([string]$subPath, [string]$name, [string]$value) {
-    $key = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($subPath, $true)
-    # PowerShell name "(Default)" maps to the unnamed default value (empty string name)
-    $regName = if ($name -eq "(Default)") { "" } else { $name }
-    $key.SetValue($regName, $value, [Microsoft.Win32.RegistryValueKind]::String)
-    $key.Close()
-}
-
-function Remove-RegKey([string]$subPath) {
+function DeleteTree([string]$subPath) {
     $parent = Split-Path $subPath -Parent
     $child  = Split-Path $subPath -Leaf
-    $key = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($parent, $true)
-    if ($key -ne $null) {
-        $key.DeleteSubKeyTree($child, $false)   # $false = don't throw if missing
-        $key.Close()
-    }
+    $pk = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($parent, $true)
+    if ($pk) { $pk.DeleteSubKeyTree($child, $false); $pk.Close() }
 }
 
-function Test-RegKey([string]$subPath) {
-    $key = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($subPath, $false)
-    $exists = $key -ne $null
-    if ($key) { $key.Close() }
-    return $exists
+function S([Microsoft.Win32.RegistryKey]$key, [string]$name, [string]$value) {
+    # name="" sets the (Default) unnamed value
+    $key.SetValue($name, $value, [Microsoft.Win32.RegistryValueKind]::String)
 }
 
-# All paths relative to HKLM (no "HKLM:\" prefix - raw .NET subkey strings)
-$base = "SOFTWARE\Classes"
+$classes = "SOFTWARE\Classes"
 
-$rootsToRemove = @(
-    "$base\*\shell\TurboZip",
-    "$base\Directory\shell\TurboZip",
-    "$base\Directory\Background\shell\TurboZip",
-    "$base\TurboZip.zip"
+# Verb key paths to clean up on uninstall
+$verbPaths = @(
+    "$classes\*\shell\TurboZip_Compress",
+    "$classes\*\shell\TurboZip_Extract",
+    "$classes\Directory\shell\TurboZip_Compress",
+    "$classes\Directory\Background\shell\TurboZip_CompressBg",
+    "$classes\TurboZip.zip"
 )
 
 # ---------------------------------------------------------------------------
@@ -76,20 +59,20 @@ $rootsToRemove = @(
 # ---------------------------------------------------------------------------
 if ($Uninstall) {
     Write-Host "Removing TurboZip context menu entries..." -ForegroundColor Yellow
-    foreach ($subPath in $rootsToRemove) {
-        if (Test-RegKey $subPath) {
-            Remove-RegKey $subPath
-            Write-Host "  Removed: HKLM\$subPath" -ForegroundColor Gray
-        }
+    foreach ($path in $verbPaths) {
+        DeleteTree $path
+        Write-Host "  Removed: HKLM\$path" -ForegroundColor Gray
     }
-    # Remove .zip association entry
-    $zipAssoc = "$base\.zip\OpenWithProgids"
-    if (Test-RegKey $zipAssoc) {
-        $key = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($zipAssoc, $true)
-        $key.DeleteValue("TurboZip.zip", $false)
-        $key.Close()
+    # Remove CommandStore verbs if present from previous install attempts
+    $store = "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell"
+    foreach ($v in @("TurboZip.Compress","TurboZip.Extract","TurboZip.CompressBgFolder")) {
+        DeleteTree "$store\$v"
     }
-    Write-Host "[OK] TurboZip context menu entries removed." -ForegroundColor Green
+    # .zip progid association
+    $zipKey = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey("$classes\.zip\OpenWithProgids", $true)
+    if ($zipKey) { $zipKey.DeleteValue("TurboZip.zip", $false); $zipKey.Close() }
+
+    Write-Host "[OK] TurboZip uninstalled." -ForegroundColor Green
     exit 0
 }
 
@@ -98,69 +81,93 @@ if ($Uninstall) {
 # ---------------------------------------------------------------------------
 if (-not (Test-Path -LiteralPath $ExePath)) {
     Write-Warning "turbozip.exe not found at: $ExePath"
-    Write-Warning "Context menu will still be registered. Place the .exe there before using it."
+    Write-Warning "Context menu will be registered; copy the .exe there to activate it."
 }
 
 Write-Host "Installing TurboZip context menu entries..." -ForegroundColor Cyan
 Write-Host "  Executable: $ExePath" -ForegroundColor Gray
 
-foreach ($scope in @("*", "Directory", "Directory\Background")) {
-    $key = "$base\$scope\shell\TurboZip"
+# ---------------------------------------------------------------------------
+# All files (*) — Compress
+# ---------------------------------------------------------------------------
+$k = CreateKey "$classes\*\shell\TurboZip_Compress"
+S $k "" "TurboZip: Compress"
+S $k "Icon" "$ExePath,0"
+$k.Close()
 
-    New-RegKey $key
-    Set-RegValue $key "(Default)"   "TurboZip"
-    Set-RegValue $key "MUIVerb"     "TurboZip"
-    Set-RegValue $key "SubCommands" ""
-    Set-RegValue $key "Icon"        "$ExePath,0"
+$k = CreateKey "$classes\*\shell\TurboZip_Compress\command"
+S $k "" "`"$ExePath`" zip `"%1`""
+$k.Close()
+Write-Host "  [+] Files -> Compress" -ForegroundColor Gray
 
-    # -- Compress sub-verb --
-    $compressLabel = switch ($scope) {
-        "Directory"            { "TurboZip: Compress Folder" }
-        "Directory\Background" { "TurboZip: Compress Current Folder" }
-        default                { "TurboZip: Compress" }
-    }
-    $compressArg = if ($scope -eq "Directory\Background") { '"%V"' } else { '"%1"' }
+# ---------------------------------------------------------------------------
+# All files (*) — Extract Here
+# ---------------------------------------------------------------------------
+$k = CreateKey "$classes\*\shell\TurboZip_Extract"
+S $k "" "TurboZip: Extract Here"
+S $k "Icon" "$ExePath,0"
+$k.Close()
 
-    New-RegKey "$key\shell\compress"
-    Set-RegValue "$key\shell\compress" "(Default)" $compressLabel
-    Set-RegValue "$key\shell\compress" "Icon"      "$ExePath,0"
+$k = CreateKey "$classes\*\shell\TurboZip_Extract\command"
+S $k "" "`"$ExePath`" unzip `"%1`""
+$k.Close()
+Write-Host "  [+] Files -> Extract Here" -ForegroundColor Gray
 
-    New-RegKey "$key\shell\compress\command"
-    Set-RegValue "$key\shell\compress\command" "(Default)" "`"$ExePath`" zip $compressArg"
+# ---------------------------------------------------------------------------
+# Folders (right-click on folder icon) — Compress Folder
+# ---------------------------------------------------------------------------
+$k = CreateKey "$classes\Directory\shell\TurboZip_Compress"
+S $k "" "TurboZip: Compress Folder"
+S $k "Icon" "$ExePath,0"
+$k.Close()
 
-    # -- Extract sub-verb (not available on folder background) --
-    if ($scope -ne "Directory\Background") {
-        New-RegKey "$key\shell\extract"
-        Set-RegValue "$key\shell\extract" "(Default)" "TurboZip: Extract Here"
-        Set-RegValue "$key\shell\extract" "Icon"      "$ExePath,0"
+$k = CreateKey "$classes\Directory\shell\TurboZip_Compress\command"
+S $k "" "`"$ExePath`" zip `"%1`""
+$k.Close()
+Write-Host "  [+] Directories -> Compress Folder" -ForegroundColor Gray
 
-        New-RegKey "$key\shell\extract\command"
-        Set-RegValue "$key\shell\extract\command" "(Default)" "`"$ExePath`" unzip `"%1`""
-    }
-}
+# ---------------------------------------------------------------------------
+# Folder background (right-click on empty space) — Compress Current Folder
+# ---------------------------------------------------------------------------
+$k = CreateKey "$classes\Directory\Background\shell\TurboZip_CompressBg"
+S $k "" "TurboZip: Compress Current Folder"
+S $k "Icon" "$ExePath,0"
+$k.Close()
 
-# -- .zip file-type association --
-New-RegKey "$base\.zip\OpenWithProgids"
-$zipProgids = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey("$base\.zip\OpenWithProgids", $true)
-$zipProgids.SetValue("TurboZip.zip", "", [Microsoft.Win32.RegistryValueKind]::String)
-$zipProgids.Close()
+$k = CreateKey "$classes\Directory\Background\shell\TurboZip_CompressBg\command"
+S $k "" "`"$ExePath`" zip `"%V`""
+$k.Close()
+Write-Host "  [+] Directory background -> Compress Current Folder" -ForegroundColor Gray
 
-New-RegKey "$base\TurboZip.zip"
-Set-RegValue "$base\TurboZip.zip" "(Default)" "TurboZip Archive"
+# ---------------------------------------------------------------------------
+# .zip file-type association
+# ---------------------------------------------------------------------------
+$k = CreateKey "$classes\.zip\OpenWithProgids"
+S $k "TurboZip.zip" ""
+$k.Close()
 
-New-RegKey "$base\TurboZip.zip\shell\extract"
-Set-RegValue "$base\TurboZip.zip\shell\extract" "(Default)" "TurboZip: Extract Here"
-Set-RegValue "$base\TurboZip.zip\shell\extract" "Icon"      "$ExePath,0"
+$k = CreateKey "$classes\TurboZip.zip"
+S $k "" "TurboZip Archive"
+$k.Close()
 
-New-RegKey "$base\TurboZip.zip\shell\extract\command"
-Set-RegValue "$base\TurboZip.zip\shell\extract\command" "(Default)" "`"$ExePath`" unzip `"%1`""
+$k = CreateKey "$classes\TurboZip.zip\shell\extract"
+S $k "" "TurboZip: Extract Here"
+S $k "Icon" "$ExePath,0"
+$k.Close()
 
-# -- Refresh shell --
+$k = CreateKey "$classes\TurboZip.zip\shell\extract\command"
+S $k "" "`"$ExePath`" unzip `"%1`""
+$k.Close()
+Write-Host "  [+] .zip file type -> Extract Here" -ForegroundColor Gray
+
+# ---------------------------------------------------------------------------
 Write-Host ""
 Write-Host "[OK] TurboZip context menu installed successfully!" -ForegroundColor Green
 Write-Host ""
-Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "  1. Place turbozip.exe at: $ExePath"
-Write-Host "  2. Right-click any file, folder, or .zip to see TurboZip options"
+Write-Host "What you will see in Explorer:" -ForegroundColor Yellow
+Write-Host "  Right-click any FILE   -> 'TurboZip: Compress' and 'TurboZip: Extract Here'"
+Write-Host "  Right-click any FOLDER -> 'TurboZip: Compress Folder'"
+Write-Host "  Right-click empty SPACE-> 'TurboZip: Compress Current Folder'"
+Write-Host "  Right-click a .zip     -> 'TurboZip: Extract Here'"
 Write-Host ""
 Write-Host "To uninstall: .\Install-TurboZip.ps1 -Uninstall" -ForegroundColor Gray
