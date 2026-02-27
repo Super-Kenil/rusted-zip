@@ -100,6 +100,12 @@ You can also add this folder to your system PATH for CLI use anywhere:
 ### Step 2 — Install Context Menu (choose one method)
 
 **Option A: PowerShell (recommended — supports custom paths)**
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process
+```
+
+
 ```powershell
 # Run as Administrator
 .\Install-RustedZip.ps1
@@ -109,6 +115,10 @@ You can also add this folder to your system PATH for CLI use anywhere:
 
 # Uninstall
 .\Install-RustedZip.ps1 -Uninstall
+```
+
+```powershell
+Stop-Process -Name explorer -Force; Start-Process explorer
 ```
 
 **Option B: Registry file**
